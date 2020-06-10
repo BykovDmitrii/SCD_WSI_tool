@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+{#<link rel= "stylesheet" type= "text/css" href="{{ url_for('static', filename='styles/analysis.css') }}">#}
+<link rel="stylesheet" type= "text/css" href="{{ url_for('static', filename='styles/words.css') }}">
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Word analysis</title>
+</head>
+<body>
+    <slant style="font-size:250%"><b>Target word - {{word}}</b></slant>
+    {% if mode != 'wsi' %}
+        <slant style="font-size:150%"><b>Predicted - {{df.iloc[0]['labels'][0]}}, golden label
+             - {{df.iloc[0]['labels'][1]}}</b></slant>
+        {% if df.iloc[0]['decision_cluster'] != -1 %}
+            <slant style="font-size:150%"><b>Decision made on cluster - {{df.iloc[0]['decision_cluster']}}</b></slant>
+        {% endif %}
+    {% endif %}
+
+    <div class="row">
+        <div style="float:left;margin-right:3px;">
+            <img src="{{ url_for('get_word_plot', path=wp_path) }}" alt="clusters distribution" style="width:47%">
+            <img src="{{ url_for('get_dist_hist', path=dh_path) }}" alt="distances histogram" style="width:47%">
+        </div>
+    </div>
+
+    <slant style="font-size:130%"><b>Jump to cluster: </b></slant><br>
+    {% for i in range(df|length) %}
+        <a href={{ "#cluster_%d" % i }}>{{ "cluster %d" % i }}</a><br>
+    {% endfor %}
+    <br><br>
+
+    {% for label, row in df.iterrows() %}
+        <section id={{"cluster_%d" % row['cluster']}}>
+
+        <slant style="font-size:180%"><b>Cluster {{ label }}</b></slant>
+        <table style="width:100%">
+        <tr>
+            <th><b><span style="color:#190D6A; font-size:110%;">Top P subst (sorted by P)</span></b></th>
+        </tr>
+
+        <tr>
+            <th>Subcorpus 1:<br></th>
+            {% if mode != "wsi" %}
+                <th><b>Subcorpus 2:</b></th>
+            {% endif %}
+        </tr>
+
+        <tr>
+            <th>
+                {% for p, c1, c2, w in row['top_words1_p'] %}
+                    {% set pf = '%.4f' % p %}
+                    {{pf}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
+                {% endfor %}
+            </th>
+        </tr>
+        {% if mode != "wsi" %}
+            <tr>
+                <th>
+                    {% for p, c1, c2, w in row['top_words2_p'] %}
+                        {% set pf = '%.4f' % p %}
+                        {{pf}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
+                    {% endfor %}
+                </th>
+            </tr>
+        {% endif %}
+        </table>
+
+        <br>
+
+        <table style="width:100%">
+        <tr>
+            <th><b><span style="color:#190D6A; font-size:110%;">Top PMI subst (sorted by PMI)</span></b></th>
+        </tr>
+
+        <tr>
+            <th>Subcorpus 1:<br></th>
+            {% if mode != "wsi" %}
+                <th><b>Subcorpus 2:</b></th>
+            {% endif %}
+        </tr>
+
+        <tr>
+            <th>
+                {% for p, c1, c2, w in row['top_words1_pmi'] %}
+                    {% set pf = '%.4f' % p %}
+                    {{pf}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
+                {% endfor %}
+            </th>
+        </tr>
+        {% if mode != "wsi" %}
+            <tr>
+                <th>
+                    {% for p, c1, c2, w in row['top_words1_pmi'] %}
+                        {% set pf = '%.4f' % p %}
+                        {{pf}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
+                    {% endfor %}
+                </th>
+            </tr>
+        {% endif %}
+        </table>
+
+        <br>
+
+        <table style="width:100%">
+        <tr>
+            <th><b><span style="color:#190D6A; font-size:110%;">Top-PMI subst first (sorted by P)</span></b></th>
+        </tr>
+
+        <tr>
+            <th>Subcorpus 1:<br></th>
+            {% if mode != "wsi" %}
+                <th><b>Subcorpus 2:</b></th>
+            {% endif %}
+        </tr>
+
+        <tr>
+            <th>
+                {% for p, pmi, c1, c2, w in row['top_words1_p_pmi'] %}
+                    {% set pf = '%.4f' % p %}
+                    {% set pmif = '%.4f' % pmi %}
+                    p={{pf}}; pmi={{pmif}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
+                {% endfor %}
+            </th>
+        </tr>
+        {% if mode != "wsi" %}
+            <tr>
+                <th>
+                    {% for p, pmi, c1, c2, w in row['top_words1_p_pmi'] %}
+                        {% set pf = '%.4f' % p %}
+                        {% set pmif = '%.4f' % pmi %}
+
+                        p={{pf}}; pmi={{pmif}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
+                    {% endfor %}
+                </th>
+            </tr>
+        {% endif %}
+        </table>
+
+
+        <br><br><br>
+        <th><b><span style="color:#190D6A; font-size:120%;">Examples</span></b></th>
+{#        EXAMPLES #}
+
+        {% for ex in row['examples_1'] %}
+            <table style="width:100%">
+                <tr>
+                    <th> Context: </th> <th>{{ ex['cont']  }}</th>
+                </tr>
+                <tr>
+                    <th> substs with probs </th>
+                    <th>
+                        {% for p, sub in ex['substs'][:50] %}
+                            {{ '%.4f' % p|float }}:<b><span style="color:#190D6A">{{sub}}</span></b>;
+                        {% endfor %}
+                    </th>
+                </tr>
+
+                <tr>
+                    <th> used substs </th>
+                    <th>
+                        {% for sub in ex['clean_substs'][:50] %}
+                            <b><span style="color:#190D6A">{{sub}}</span></b>;
+                        {% endfor %}
+                    </th>
+                </tr>
+            </table>
+            <br>
+        {% endfor %}
+
+        <br><br><br>
+        </section>
+
+    {% endfor %}
+
+    <div id="element3">
+        {{ text|safe }}
+    </div>
+</body>
+</html>
