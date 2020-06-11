@@ -15,7 +15,6 @@ import io
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from xlm.sgen_xlm import generate_substitutes
 from pathlib import Path
 
 from itertools import product
@@ -86,7 +85,7 @@ def get_distances_hist(word, output_path, dist_matrix, mask_scd, bool_mask_wsi, 
 np.seterr(divide='ignore', invalid='ignore')
 
 class Clustering_Pipeline(Evaluatable):
-    def __init__(self, data_name, output_directory, vectorizer_name = 'count_tfidf', min_df = 10, max_df = 0.6,  max_number_clusters = 12,
+    def __init__(self, data_name, vectorizer_name = 'count_tfidf', min_df = 10, max_df = 0.6, number_of_clusters = 12,
                  use_silhouette = True, k = 2, n = 5, topk = None, lemmatizing_method = 'none', binary = False,
                  dump_errors = False, max_examples = None, delete_word_parts = False, drop_duplicates=True,
                  count_lemmas_weights = False,
@@ -121,7 +120,7 @@ class Clustering_Pipeline(Evaluatable):
         subst1, subst2 - you can also pass the pre-loaded substitutes as dataframes
 
         """
-        super().__init__(output_directory, dump_errors)
+        super().__init__(dump_errors)
 
         self.stream = stream if stream is not None else sys.stdout
         self.data_name = data_name
@@ -130,7 +129,7 @@ class Clustering_Pipeline(Evaluatable):
         self.transformer = None
         self.k = k
         self.n = n
-        self.max_number_clusters = max_number_clusters
+        self.number_of_clusters = number_of_clusters
         self.use_silhouette = use_silhouette
         self.min_df = int(min_df) if min_df >= 1 else float(min_df)
         self.max_df = int(max_df) if max_df >= 1 else float(max_df)
@@ -313,25 +312,6 @@ class Clustering_Pipeline(Evaluatable):
             result_df['labels'] = self.label_pairs[word]
 
         return wp, dh, result_df
-
-    def dump_report(self, full_path_dump, label_pairs):
-        error_words = []
-        pictures_dir = full_path_dump + '_pictures'
-        os.makedirs(pictures_dir, exist_ok=True)
-
-        if self.stream is not None:
-            output = self.stream
-        elif full_path_dump is None:
-            output = sys.stdout
-        else:
-            output = open(full_path_dump, 'w+')
-        for w, (i, j) in label_pairs.items():
-            dist1 = self.distributions[w][0]
-            dist2 = self.distributions[w][1]
-
-            if i != j:
-                error_words.append(w)
-                self.analyze_error(w, output, label_pairs)
 
     def _get_score(self, vec1, vec2):
         return cosine(vec1, vec2)
@@ -589,8 +569,8 @@ class Clustering_Pipeline(Evaluatable):
             labels, _, _, w_distances = clusterize_search(word, transformed, ncs=list(range(2, 5)) + list(range(7, 15, 2)),
                                              corpora_ids = corpora_ids )
         else:
-            labels, _, _, w_distances = clusterize_search(word, transformed, ncs=(self.max_number_clusters,),
-                                             corpora_ids = corpora_ids )
+            labels, _, _, w_distances = clusterize_search(word, transformed, ncs=(self.number_of_clusters,),
+                                                          corpora_ids = corpora_ids)
 
         distance_matrix = w_distances[0]
 
@@ -797,7 +777,7 @@ search_ranges = {
 
 class Clustering_Search(GridSearch):
     def __init__(self, output_directory, subst1_path, subst2_path, subdir = None, vectorizer_name = None, min_df = None,
-                 max_df = None,  max_number_clusters = None,use_silhouette = None, k = None, n = None,
+                 max_df = None, number_of_clusters = None, use_silhouette = None, k = None, n = None,
                  topk = None, lemmatizing_method=None, binary = False, dump_errors = False, max_examples = None,
                  delete_word_parts = True, drop_duplicates=True, count_lemmas_weights=False):
         """
@@ -836,7 +816,7 @@ class Clustering_Search(GridSearch):
         self.evaluatables = None
         self.stream = io.StringIO()
         self.vectorizer_name = vectorizer_name
-        self.max_number_clusters = max_number_clusters
+        self.number_of_clusters = number_of_clusters
         self.use_silhouette = use_silhouette
         self.min_df = min_df
         self.max_df = max_df

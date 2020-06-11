@@ -3,7 +3,7 @@
 	python ./web/app.py \
 		--data_name=russe_bts-rnc/train \
 		--output_directory=bts_rnc_res \
-		--subst1_path=$1 \
+		--subst1_path=$1/\<mask\>\<mask\>-\(а-также-T\)-2ltr2f_topk150_fixspacesTrue.npz+0.0+ \
 		--lemmatizing_method=all \
 		--topk=150 \
 		--k=2 \
@@ -12,6 +12,6 @@
 		--min_df=0.03 \
 		--max_df=0.8 \
 		--use_silhouette=False \
-		--max_number_clusters=3 \
+		--number_of_clusters=3 \
 		--drop_duplicates=True \
 		--count_lemmas_weights=True)

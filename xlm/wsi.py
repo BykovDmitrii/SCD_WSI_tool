@@ -301,30 +301,9 @@ def clusterize_search( word, vecs, gold_sense_ids = None ,ncs=list(range(1, 5, 1
             tmp_df['sil_cosine'] = w_max_sil_cosine
             tmp_dfs.append(tmp_df)
 
-    # if pictures_dir is not None:
-    #     assert pictures_prefix is not None
-    #     path1 = pictures_dir + '/' + pictures_prefix + 'separate.svg'
-    #     path2 = pictures_dir + '/' + pictures_prefix + 'all.svg'
-    #
-    #     get_distances_hist(big_graph_df, path1, path2)
-
     picture_df = pd.concat(tmp_dfs) if tmp_dfs else None
 
-    # if len(warn_zero_vecs_words) > 0:
-    #     print(
-    #         f'WARNING: {len(warn_zero_vecs_words)}/{len(vecs.keys())} words had ~{np.mean(warn_zero_vecs_words)} 0 vectors! Converted them to 1-hot.')
     sdf = pd.concat(sdfs, ignore_index=True)
-    # groupby is docuented to preserve inside group order
-    # res = sdf.sort_values(by='ari').groupby(by='word').last()
-    # # maxari for fixed hypers
-    # fixed_hypers = sdf.groupby(['affinity', 'linkage', 'nc']).agg({'ari': np.mean}).reset_index()
-    # idxmax = fixed_hypers.ari.idxmax()
-    # res_df = fixed_hypers.loc[idxmax:idxmax].copy()
-    # res_df = res_df.rename(columns=lambda c: 'fh_maxari' if c == 'ari' else 'fh_' + c)
-    # res_df['maxari'] = res.ari.mean()
-    #
-    # for metric in [c for c in sdf.columns if c.startswith('sil')]:
-    #     res_df[metric+'_ari'] = sdf.sort_values(by=metric).groupby(by='word').last().ari.mean()
     return best_clids, sdf, picture_df, distances
 
 

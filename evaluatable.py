@@ -31,8 +31,7 @@ def get_golden_data_paths(data_name):
     return paths1[0], paths2[0]
 
 class Evaluatable(ABC):
-    def __init__(self, output_directory, should_dump = False):
-        self.output_dir = output_directory
+    def __init__(self, should_dump = False):
         self.should_dump = should_dump
 
     @abstractmethod
@@ -45,13 +44,6 @@ class Evaluatable(ABC):
 
     @abstractmethod
     def get_params(self : dict):
-        """
-        expected to return dict of parameters names and values
-        """
-        pass
-
-    @abstractmethod
-    def dump_report(self, full_path_dump, label_pairs):
         """
         expected to return dict of parameters names and values
         """
@@ -193,9 +185,6 @@ class Evaluatable(ABC):
                         output_binary.write(line_binary)
         if dataframe is not None:
             dataframe.to_csv(full_path_df, sep='\t')
-
-        if self.should_dump:
-            self.dump_report(full_path_dump, label_pairs)
 
     def run(self, target_words, df1, df2):
         """

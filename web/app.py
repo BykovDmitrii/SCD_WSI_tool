@@ -87,19 +87,19 @@ def create_app(evaluatable, data_name):
 
     return app
 
-def configure_and_run(data_name, output_directory,subst1_path, subst2_path = None, vectorizer_name = 'count', min_df = 0.03, max_df = 0.8,
-                      max_number_clusters = 0,
+def configure_and_run(data_name,subst1_path, subst2_path = None, vectorizer_name = 'count', min_df = 0.03, max_df = 0.8,
+                      number_of_clusters = 0,
                  use_silhouette = True, k = 10, n = 15, topk = 150, lemmatizing_method = 'single', binary = False,
                      drop_duplicates=False, count_lemmas_weights=True):
 
     if subst2_path is None:
         subst2_path = subst1_path
 
-    evaluatable = Clustering_Pipeline(data_name, output_directory, vectorizer_name=vectorizer_name, min_df=min_df, max_df=max_df,
-                                      max_number_clusters=max_number_clusters, use_silhouette=use_silhouette, k=k, n=n, topk=topk,
+    evaluatable = Clustering_Pipeline(data_name, vectorizer_name=vectorizer_name, min_df=min_df, max_df=max_df,
+                                      number_of_clusters=number_of_clusters, use_silhouette=use_silhouette, k=k, n=n, topk=topk,
                                       lemmatizing_method=lemmatizing_method, drop_duplicates=drop_duplicates,
                                       count_lemmas_weights=count_lemmas_weights,
-                                      binary=binary,dump_errors=True, path_1=subst1_path, path_2=subst2_path)
+                                      binary=binary, dump_errors=True, path_1=subst1_path, path_2=subst2_path)
     app = create_app(evaluatable, data_name)
     app.run()
 
