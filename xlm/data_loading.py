@@ -55,7 +55,7 @@ def load_target_words(name):
     elif name == 'dta':
         return _load_target_words(durel_target_words_path)
     elif name in target_languages:
-        return _load_target_words('data/' + name + '/targets.txt')
+        return _load_target_words('../data/targets/' + name + '.txt')
     elif name in [i + 'unlem' for i in target_languages]:
         name = name.replace('unlem', '')
         return _load_target_words('data/' + name + '/targets.txt')

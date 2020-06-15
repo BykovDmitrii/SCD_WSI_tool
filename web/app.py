@@ -63,12 +63,12 @@ def create_app(evaluatable, data_name):
     @app.route('/get_word_plot/<path>')
     def get_word_plot(path):
         print(path)
-        return send_file(path.replace("_", "/"), mimetype='image/jpg', cache_timeout=0)
+        return send_file(path.replace("]", "/"), mimetype='image/jpg', cache_timeout=0)
 
     @app.route('/get_dist_hist/<path>')
     def get_dist_hist(path):
         print(path)
-        return send_file(path.replace("_", "/"), mimetype='image/jpg', cache_timeout=0)
+        return send_file(path.replace("]", "/"), mimetype='image/jpg', cache_timeout=0)
 
     @app.route('/analyze/<word>')
     def analyze(word):
@@ -77,7 +77,8 @@ def create_app(evaluatable, data_name):
             binary, distance = evaluatable.solve_for_one_word(word, stream)
             label_pairs = {word:(binary, binary_golden[word])}
             wp_path, dh_path, df = evaluatable.analyze_error(word, stream, label_pairs, pictures_dir)
-
+            print(df.keys())
+            print(df.iloc[0]['top_words2_pmi'])
             return render_template('analysis.html', text=stream.getvalue(), wp_path=wp_path, dh_path=dh_path, word=word, df=df, mode=mode)
         elif mode == 'wsi':
             stream = io.StringIO()
@@ -90,7 +91,7 @@ def create_app(evaluatable, data_name):
 def configure_and_run(data_name,subst1_path, subst2_path = None, vectorizer_name = 'count', min_df = 0.03, max_df = 0.8,
                       number_of_clusters = 0,
                  use_silhouette = True, k = 10, n = 15, topk = 150, lemmatizing_method = 'single', binary = False,
-                     drop_duplicates=False, count_lemmas_weights=True):
+                     drop_duplicates=False, count_lemmas_weights=True, ip="127.0.0.1", port="5000"):
 
     if subst2_path is None:
         subst2_path = subst1_path
@@ -101,7 +102,7 @@ def configure_and_run(data_name,subst1_path, subst2_path = None, vectorizer_name
                                       count_lemmas_weights=count_lemmas_weights,
                                       binary=binary, dump_errors=True, path_1=subst1_path, path_2=subst2_path)
     app = create_app(evaluatable, data_name)
-    app.run()
+    app.run(host=ip, port=int(port))
 
 if __name__ == '__main__':
     fire.Fire(configure_and_run)

@@ -52,17 +52,15 @@
                     {{pf}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
                 {% endfor %}
             </th>
-        </tr>
         {% if mode != "wsi" %}
-            <tr>
                 <th>
                     {% for p, c1, c2, w in row['top_words2_p'] %}
                         {% set pf = '%.4f' % p %}
                         {{pf}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
                     {% endfor %}
                 </th>
-            </tr>
         {% endif %}
+        </tr>
         </table>
 
         <br>
@@ -86,17 +84,15 @@
                     {{pf}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
                 {% endfor %}
             </th>
-        </tr>
         {% if mode != "wsi" %}
-            <tr>
                 <th>
                     {% for p, c1, c2, w in row['top_words1_pmi'] %}
                         {% set pf = '%.4f' % p %}
                         {{pf}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
                     {% endfor %}
                 </th>
-            </tr>
         {% endif %}
+        </tr>
         </table>
 
         <br>
@@ -121,9 +117,7 @@
                     p={{pf}}; pmi={{pmif}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
                 {% endfor %}
             </th>
-        </tr>
         {% if mode != "wsi" %}
-            <tr>
                 <th>
                     {% for p, pmi, c1, c2, w in row['top_words1_p_pmi'] %}
                         {% set pf = '%.4f' % p %}
@@ -132,16 +126,44 @@
                         p={{pf}}; pmi={{pmif}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
                     {% endfor %}
                 </th>
-            </tr>
         {% endif %}
+        </tr>
         </table>
 
 
         <br><br><br>
         <th><b><span style="color:#190D6A; font-size:120%;">Examples</span></b></th>
 {#        EXAMPLES #}
-
+	
+        <th><b> Corpus 1</b></th>
         {% for ex in row['examples_1'] %}
+            <table style="width:100%">
+                <tr>
+                    <th> Context: </th> <th>{{ ex['cont']  }}</th>
+                </tr>
+                <tr>
+                    <th> substs with probs </th>
+                    <th>
+                        {% for p, sub in ex['substs'][:50] %}
+                            {{ '%.4f' % p|float }}:<b><span style="color:#190D6A">{{sub}}</span></b>;
+                        {% endfor %}
+                    </th>
+                </tr>
+
+                <tr>
+                    <th> used substs </th>
+                    <th>
+                        {% for sub in ex['clean_substs'][:50] %}
+                            <b><span style="color:#190D6A">{{sub}}</span></b>;
+                        {% endfor %}
+                    </th>
+                </tr>
+            </table>
+            <br>
+        {% endfor %}
+
+    <th><b> Corpus 2</b></th>
+        {% for ex in row['examples_2'] %}
             <table style="width:100%">
                 <tr>
                     <th> Context: </th> <th>{{ ex['cont']  }}</th>
@@ -171,9 +193,5 @@
         </section>
 
     {% endfor %}
-
-    <div id="element3">
-        {{ text|safe }}
-    </div>
 </body>
 </html>

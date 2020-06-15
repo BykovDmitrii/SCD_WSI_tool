@@ -47,7 +47,7 @@ def get_word_plot(word, df, output_path, wsi_mode):
 
     img_path = output_path + '/' + word + '-cluster-dist.jpg'
     plt.savefig(img_path)
-    return os.path.abspath(img_path).replace("/", "_")
+    return os.path.abspath(img_path).replace("/", "]")
     # img = io.BytesIO()
     # plt.savefig(img)
     # img.seek(0)
@@ -80,7 +80,7 @@ def get_distances_hist(word, output_path, dist_matrix, mask_scd, bool_mask_wsi, 
 
     img_path = output_path + '/' + word + '-distance-histogram.jpg'
     plt.savefig(img_path)
-    return os.path.abspath(img_path).replace("/", "_")
+    return os.path.abspath(img_path).replace("/", "]")
 
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -304,12 +304,12 @@ class Clustering_Pipeline(Evaluatable):
             cluster_descriptions.append(self.explain_cluster(word, cluster, output, label_pairs == None))
             # a little hack
             cluster_descriptions[-1]['distributions'] = self.distributions[word]
+            cluster_descriptions[-1]['labels'] = label_pairs[word]
 
         result_df = pd.DataFrame(cluster_descriptions)
         if label_pairs is not None:
             if label_pairs[word][0] == 1:
                 result_df['decision_cluster'] = self.decision_clusters[word]
-            result_df['labels'] = self.label_pairs[word]
 
         return wp, dh, result_df
 
