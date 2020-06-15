@@ -14,4 +14,6 @@
 		--use_silhouette=False \
 		--number_of_clusters=3 \
 		--drop_duplicates=True \
-		--count_lemmas_weights=True)
+		--count_lemmas_weights=True \
+                --ip="$2" \
+                --port=$3)

@@ -2,7 +2,7 @@
 from xlm.substs_loading import load_substs
 from collections import defaultdict, Counter
 from evaluatable import Evaluatable, GridSearch
-from xlm.data_loading import load_data, load_target_words, rnc_target_positive_words_path, rnc_target_negative_words_path
+from xlm.data_loading import load_data, load_target_words
 from xlm.wsi import clusterize_search, Substs_loader
 from pathlib import Path
 from joblib import Memory
@@ -304,7 +304,8 @@ class Clustering_Pipeline(Evaluatable):
             cluster_descriptions.append(self.explain_cluster(word, cluster, output, label_pairs == None))
             # a little hack
             cluster_descriptions[-1]['distributions'] = self.distributions[word]
-            cluster_descriptions[-1]['labels'] = label_pairs[word]
+            if label_pairs is not None:
+                cluster_descriptions[-1]['labels'] = label_pairs[word]
 
         result_df = pd.DataFrame(cluster_descriptions)
         if label_pairs is not None:

@@ -20,13 +20,8 @@ target_languages = ['english', 'german', 'swedish', 'latin']
 
 corpora_extension = '.txt'
 
-rnc_dir = '../data/rnc/'
-rnc_old_dir = '../data/rnc_old/'
-rnc_target_positive_words_path = rnc_dir + 'positive_targets.txt'
-rnc_target_negative_words_path = rnc_dir + 'negative_targets.txt'
-
-rnc_target_old_positive_words_path = rnc_old_dir + 'positive_targets.txt'
-rnc_target_old_negative_words_path = rnc_old_dir + 'negative_targets.txt'
+rnc_target_old_positive_words_path = '../data/targets/rumacro_positive.txt'
+rnc_target_old_negative_words_path = '../data/targets/rumacro_negative.txt'
 
 
 rnc_parts = {1:'old-1917/', 2:'new1991-/'}
