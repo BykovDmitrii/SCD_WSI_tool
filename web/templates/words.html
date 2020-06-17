@@ -5,14 +5,15 @@
 <nav>
   <h1>Results</h1>
     <table style="width:100%">
-    <tr>
+
+
+     {% if mode == "wsi" %}
+     <tr>
         <th><b>Target word</b></th>
         <th><b>Ari</b></th>
         <th><b>Count</b></th>
-    </tr>
-
-      {% if mode == "wsi" %}
-        {% for word, (ari, count) in get_wsi_words_and_ari() %}
+     </tr>      
+     {% for word, (ari, count) in get_wsi_words_and_ari() %}
             <tr>
                 <th><a href="{{ url_for('analyze', word=word) }}">{{ word }}</a></th>
                 <th>{{ ari }}</th>
@@ -20,8 +21,17 @@
             </tr>
         {% endfor %}
       {% else %}
-        {% for word, (label, golden_label) in get_words_and_labels() %}
-            <li><a href="{{ url_for('analyze', word=word) }}">{{ word }} with predicted label {{ label }} and golden {{ golden_label }}</a>
+      <tr>
+        <th><b>Target word</b></th>
+        <th><b>Predicted label</b></th>
+        <th><b>Groundtruth label</b></th>
+      </tr>      
+       {% for word, (label, golden_label) in get_words_and_labels() %}
+             <tr>
+                <th><a href="{{ url_for('analyze', word=word) }}">{{ word }}</a></th>
+                <th>{{ label }}</th>
+                <th>{{ golden_label }}</th>
+            </tr>
         {% endfor %}
       {% endif %}
     </table>
