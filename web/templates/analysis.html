@@ -39,9 +39,9 @@
         </tr>
 
         <tr>
-            <th><b><span style="font-size:110%">Subcorpus 1:</b></th>
+            <th><b><span style="font-size:110%">Subcorpus 1:</span></b></th>
             {% if mode != "wsi" %}
-                <th><b><span style="font-size:110%">Subcorpus 2:</b></th>
+                <th><b><span style="font-size:110%">Subcorpus 2:</span></b></th>
             {% endif %}
         </tr>
 
@@ -71,9 +71,9 @@
         </tr>
 
         <tr>
-            <th><b><span style="font-size:110%">Subcorpus 1:</b></th>
+            <th><b><span style="font-size:110%">Subcorpus 1:</span></b></th>
             {% if mode != "wsi" %}
-                <th><b><span style="font-size:110%">Subcorpus 2:</b></th>
+                <th><b><span style="font-size:110%">Subcorpus 2:</span></b></th>
             {% endif %}
         </tr>
 
@@ -103,9 +103,9 @@
         </tr>
 
         <tr>
-            <th><b><span style="font-size:110%">Subcorpus 1:</b></th>
+            <th><b><span style="font-size:110%">Subcorpus 1:</span></b></th>
             {% if mode != "wsi" %}
-                <th><b><span style="font-size:110%">Subcorpus 2:</b></th>
+                <th><b><span style="font-size:110%">Subcorpus 2:</span></b></th>
             {% endif %}
         </tr>
 
@@ -135,11 +135,14 @@
         <th colspan="2"><b><span style="color:#190D6A; font-size:150%;">Examples</span></b></th><br>
 {#        EXAMPLES #}
 	
-        <th colspan="2"><b><span style="font-size=120%"> Corpus 1</span></b></th><br>
+        <th colspan="2"><b><span style="font-size:120%"> Corpus 1</span></b></th><br>
         {% for ex in row['examples_1'] %}
             <table style="width:100%">
                 <tr>
-                    <td> Context: </td> <td>{{ ex['cont']  }}</td>
+                    {% set left = ex['cont'][:ex['positions'][0]] %}
+                    {% set right = ex['cont'][ex['positions'][1]:] %}
+                    {% set target = ex['cont'][ex['positions'][0]:ex['positions'][1]] %}
+                    <td> Context: </td> <td>{{ left  }} <b>{{ target }}</b> {{ right }}</td>
                 </tr>
                 <tr>
                     <td> substs with probs </td>
@@ -163,7 +166,7 @@
         {% endfor %}
 
         {% if row['examples_2']|length %}
-            <th colspan="2"><b><span style="font-size=120%"> Corpus 2</span></b></th><br>
+            <th colspan="2"><b><span style="font-size:120%"> Corpus 2</span></b></th><br>
         {% endif %}
 
         {% for ex in row['examples_2'] %}

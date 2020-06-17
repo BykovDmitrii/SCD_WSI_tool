@@ -233,7 +233,8 @@ class Clustering_Pipeline(Evaluatable):
             subs = self.examples[word][0][0][cluster][index]
             clean_subs =self.examples[word][0][1][cluster][index]
             cont = self.contexts[word][0][cluster][index]
-            examples_1.append({'substs' : subs, 'clean_substs' : clean_subs, 'cont':cont})
+            positions = self.examples[word][0][2][cluster][index]
+            examples_1.append({'substs' : subs, 'clean_substs' : clean_subs, 'cont':cont, 'positions' : positions})
 
         result_tuple['examples_1'] = examples_1
 
@@ -246,8 +247,9 @@ class Clustering_Pipeline(Evaluatable):
             for index in indexes:
                 subs = self.examples[word][1][0][cluster][index]
                 clean_subs = self.examples[word][1][1][cluster][index]
+                positions = self.examples[word][1][2][cluster][index]
                 cont = self.contexts[word][1][cluster][index]
-                examples_2.append({'substs': subs, 'clean_substs': clean_subs, 'cont': cont})
+                examples_2.append({'substs': subs, 'clean_substs': clean_subs, 'cont': cont, 'positions' : positions})
 
             result_tuple['examples_2'] = examples_2
 
@@ -339,6 +341,9 @@ class Clustering_Pipeline(Evaluatable):
         cluster_examples_clean1 = defaultdict(list)
         cluster_examples_clean2 = defaultdict(list)
 
+        positions_1 = defaultdict(list)
+        positions_2 = defaultdict(list)
+
         gold_sence_ids1 =  defaultdict(list)
         gold_sence_ids2 =  defaultdict(list)
 
@@ -352,6 +357,7 @@ class Clustering_Pipeline(Evaluatable):
             cluster_examples1[l].append(subst1['substs_probs'][i])
             cluster_examples_clean1[l].append([i for i in subst1['substs'][i].split() if i in feat_names])
             cluster_contexts1[l].append(subst1['context'][i])
+            positions_1[l].append(subst1['positions'][i])
             if dump_gold_sence_ids:
                 gold_sence_ids1[l].append(subst1['gold_sense_id'][i])
 
@@ -359,10 +365,13 @@ class Clustering_Pipeline(Evaluatable):
             cluster_examples2[l].append(subst2['substs_probs'][i])
             cluster_examples_clean2[l].append([i for i in subst2['substs'][i].split() if i in feat_names])
             cluster_contexts2[l].append(subst2['context'][i])
+            positions_2[l].append(subst2['positions'][i])
             if dump_gold_sence_ids:
                 gold_sence_ids2[l].append(subst1['gold_sense_id'][i])
 
-        self.examples[word] = ((cluster_examples1, cluster_examples_clean1), (cluster_examples2, cluster_examples_clean2))
+        self.examples[word] = ((cluster_examples1, cluster_examples_clean1, positions_1),
+                                    (cluster_examples2, cluster_examples_clean2, positions_2))
+
         self.contexts[word] = (cluster_contexts1, cluster_contexts2)
         self.sense_ids[word] = (gold_sence_ids1, gold_sence_ids2)
 
