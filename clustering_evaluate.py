@@ -60,7 +60,7 @@ class Clustering_Pipeline(Evaluatable):
     def __init__(self, data_name, vectorizer_name = 'count_tfidf', min_df = 10, max_df = 0.6, number_of_clusters = 12,
                  use_silhouette = True, k = 2, n = 5, topk = None, lemmatizing_method = 'none', binary = False,
                  dump_errors = False, max_examples = None, delete_word_parts = False, drop_duplicates=True,
-                 count_lemmas_weights = False,
+                 count_lemmas_weights = False, output_directory = './',
                  path_1 = None, path_2 = None, subst1 = None, subst2 = None):
         """
         output_directory -- location where all the results are going to be written
@@ -92,6 +92,7 @@ class Clustering_Pipeline(Evaluatable):
         subst1, subst2 - you can also pass the pre-loaded substitutes as dataframes
 
         """
+        self.output_dir = output_directory
         super().__init__(dump_errors)
 
         self.data_name = data_name
@@ -711,10 +712,10 @@ class Clustering_Search(GridSearch):
         substs1, substs2 = self.get_substs(data_name, subst1_path, subst2_path,
                                            params['topk'], params['lemmatizing_method'])
 
-        res = Clustering_Pipeline(data_name, self.output_directory, **params, binary = self.binary,
+        res = Clustering_Pipeline(data_name, **params, binary = self.binary,
                                   dump_errors = self.dump_errors, max_examples = self.max_examples,
                                   delete_word_parts=self.delete_word_parts, drop_duplicates=self.drop_duplicates,
-                                  count_lemmas_weights=self.count_lemmas_weights,
+                                  count_lemmas_weights=self.count_lemmas_weights, output_directory=self.output_directory,
                                   subst1=substs1, subst2=substs2)
         return res
 

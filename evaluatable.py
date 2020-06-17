@@ -28,6 +28,7 @@ def get_golden_data_paths(data_name):
 
 class Evaluatable(ABC):
     def __init__(self, should_dump = False):
+        self.output_dir = './'
         self.should_dump = should_dump
 
     @abstractmethod
@@ -113,8 +114,6 @@ class Evaluatable(ABC):
         returns that dataframe
         accaptable data_name:
             rumacro
-            rumacroold
-            dta
             english
             swedish
             latin
@@ -124,7 +123,6 @@ class Evaluatable(ABC):
 
         assert golden_binary_data is not None and golden_ranking_data is not None, "No golden data for %s" % self.data_name
 
-        df1, df2 = None, None
         target_words = load_target_words(self.data_name)
         target_words = [i.split('_')[0] for i in target_words]
         results = self.solve(target_words)
@@ -139,15 +137,16 @@ class Evaluatable(ABC):
                     (ranking_metric, binary_accuracy_metric, binary_f1_metric)
         print(line)
 
-        dataframe = None # self.get_dataframe(ranking_metric, binary_accuracy_metric, binary_f1_metric)
+        dataframe = self.get_dataframe(ranking_metric, binary_accuracy_metric, binary_f1_metric)
+
         if should_dump_results:
-            self.dump_results(results, dataframe, labels_pairs)
+            self.dump_results(results, dataframe)
 
         return dataframe, labels_pairs
 
 
     # results_format = list[(word, score, binary_label)]
-    def dump_results(self, results, dataframe = None, label_pairs = None):
+    def dump_results(self, results, dataframe = None):
         """
         writing results to the files
         results are stored in <output_dir>/<template>/
