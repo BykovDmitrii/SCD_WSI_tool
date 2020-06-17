@@ -137,9 +137,9 @@ class Evaluatable(ABC):
                     (ranking_metric, binary_accuracy_metric, binary_f1_metric)
         print(line)
 
-        dataframe = self.get_dataframe(ranking_metric, binary_accuracy_metric, binary_f1_metric)
-
+        dataframe = None
         if should_dump_results:
+            dataframe = self.get_dataframe(ranking_metric, binary_accuracy_metric, binary_f1_metric)
             self.dump_results(results, dataframe)
 
         return dataframe, labels_pairs
