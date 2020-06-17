@@ -15,5 +15,5 @@
 		--number_of_clusters=0 \
 		--drop_duplicates=True \
 		--count_lemmas_weights=False \
-                --ip="$3"
+                --ip="$3" \
                 --port=$4)
