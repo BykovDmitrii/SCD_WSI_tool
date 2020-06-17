@@ -1,14 +1,10 @@
 from abc import ABC, abstractmethod
 import os
 from scipy.stats import spearmanr
-from sklearn.base import ClassifierMixin, BaseEstimator
 from sklearn.metrics import accuracy_score, f1_score
-from sklearn.model_selection import GridSearchCV, KFold, cross_val_score
-from datetime import datetime
-from xlm.data_loading import load_data, load_target_words
+from xlm.wsi import load_target_words
 import time
 import pandas as pd
-import numpy as np
 from pathlib import Path
 
 golden_data_path = str(Path(__file__).parent.absolute()) + '/data/golden_data'
@@ -35,7 +31,7 @@ class Evaluatable(ABC):
         self.should_dump = should_dump
 
     @abstractmethod
-    def solve(self, target_words, df1, data_name1, df2, data_name2):
+    def solve(self, target_words):
         """
         main method.
         returns tuples of (word, ranking_metric, binary_label)
@@ -107,7 +103,6 @@ class Evaluatable(ABC):
         df_dict['ranking_score'] = ranking_metric
         df_dict['binary_accuracy_score'] = binary_accuracy_metric
         df_dict['binary_f1_score'] = binary_f1_metric
-        # print(list(df_dict.keys()))
         df = pd.DataFrame.from_dict(df_dict)
         return df
 
@@ -132,7 +127,7 @@ class Evaluatable(ABC):
         df1, df2 = None, None
         target_words = load_target_words(self.data_name)
         target_words = [i.split('_')[0] for i in target_words]
-        results = self.solve(target_words, self.data_name + '_1', df1, self.data_name + '_2', df2)
+        results = self.solve(target_words)
 
         ranking_results = dict([(i[0], i[1]) for i in results])
         binary_results = dict([(i[0], i[2]) for i in results])
@@ -151,7 +146,6 @@ class Evaluatable(ABC):
         return dataframe, labels_pairs
 
 
-
     # results_format = list[(word, score, binary_label)]
     def dump_results(self, results, dataframe = None, label_pairs = None):
         """
@@ -167,12 +161,10 @@ class Evaluatable(ABC):
         filename_rank = '_'.join([str(v) for k, v in params.items() if k != 'template']) + '_rank.txt'
         filename_binary = '_'.join([str(v) for k, v in params.items() if k != 'template']) + '_binary.txt'
         filename_df = '_'.join([str(v) for k, v in params.items() if k != 'template']) + '_df.csv'
-        filename_dump = '_'.join([str(v) for k, v in params.items() if k != 'template']) + '_report.txt'
 
         full_path_rank = output_dir + '/' + filename_rank
         full_path_binary = output_dir + '/' + filename_binary
         full_path_df = output_dir + '/' + filename_df
-        full_path_dump = output_dir + '/' + filename_dump
 
         if results is not None:
             with open(full_path_rank, 'w+') as output_rank:
@@ -252,67 +244,3 @@ class GridSearch(ABC):
         self.dump_df(big_df)
         return self.stream
 
-
-    def evaluate_cv(self, data_name):
-        outer = self
-        params_list = outer.get_params_list()
-        sdfs = []
-
-        class Est(ClassifierMixin, BaseEstimator):
-            def fit(self, target_words, y_true):
-                max_acc = -1.0
-                for params in params_list:
-                    print("fit: evaluating params ", list(params.items()))
-                    evaluatable = outer.create_evaluatable(data_name, params)
-                    if evaluatable is None:
-                        print("fit: warining! evaluatable is None for params ", params)
-                        continue
-                    results = evaluatable.solve(target_words, evaluatable.data_name + '_1', df1, evaluatable.data_name + '_2', df2)
-                    t2pred = {t: binpred for t, pred, binpred in results}
-                    pred = [t2pred[t] for t in target_words]
-                    acc = accuracy_score(y_true, pred)
-                    dd = {'phase': 'train', 'words': ' '.join(sorted(target_words)), 'acc': acc}
-                    dd.update(params)
-                    sdfs.append(pd.DataFrame(dd, index=[0]))
-                    print('fit: acc=', acc, list(params.items()))
-                    if acc > max_acc:
-                        max_acc, self.solver, self.params = acc, evaluatable, params
-                        print('fit: new best acc=', acc, list(params.items()))
-                print('fit: final best acc=', max_acc)
-
-            def predict(self, target_words):
-                results = self.solver.solve(target_words, data_name + '_1', df1, data_name + '_2', df2)
-                t2pred = {t: binpred for t, pred, binpred in results}
-                pred = [t2pred[t] for t in target_words]
-                return pred
-         
-            def score(self, target_words, y, sample_weight=None):
-                preds = self.predict(target_words)
-                acc = accuracy_score(y, preds, sample_weight=sample_weight)
-                dd = {'phase': 'test', 'words': ' '.join(sorted(target_words)), 'acc': acc}
-                dd.update(self.params)
-                sdfs.append(pd.DataFrame(dd, index=[0]))
-                return acc
-
-
-        _, t2label = self.create_evaluatable(data_name, params_list[0]).load_golden_data(data_name)
-        assert t2label is not None, "no golden data for %s" % data_name
-        df1, df2 = None, None
-        target_words = load_target_words(data_name)
-        target_words = [i.split('_')[0] for i in target_words]
-        y = [t2label[t] for t in target_words]
-
-        kf = KFold(n_splits=10)
-        scores = cross_val_score(Est(), target_words, y, cv=kf)
-        print('evaluate_cv')
-
-        strdt = datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
-        dataframe = pd.DataFrame({'acc': [np.mean(scores), np.std(scores)] + list(scores),
-                                  'fold': ['mean', 'std'] + list(range(len(scores)))})
-
-        dataframe.to_csv(self.get_output_path() + '-acc-'+strdt, sep='\t', index=False)
-
-        sdf = pd.concat(sdfs,ignore_index=True)
-        sdf.to_csv(self.get_output_path() + '-full-'+strdt, sep='\t', index=False)
-    
-        return self.stream

@@ -1,16 +1,12 @@
 import os
-from clustering_evaluate import Clustering_Search, Clustering_Pipeline
-import io
+from clustering_evaluate import Clustering_Pipeline
 import fire
-from xlm.data_loading import load_target_words
+from xlm.wsi import load_target_words
 from xlm.wsi_evaluation import evaluate as evaluate_wsi
 
 from flask import (
-    Flask, Blueprint, flash, g, redirect, render_template, request, session, url_for, send_file
+    Flask, render_template, send_file
 )
-from werkzeug.security import check_password_hash, generate_password_hash
-
-# from flaskr.db import get_db
 
 def run_wsi(evaluatable, data_name):
     target_words = load_target_words(data_name)
@@ -18,9 +14,9 @@ def run_wsi(evaluatable, data_name):
         target_words = evaluatable.subst1['word'].unique()
     else:
         target_words = [i.split('_')[0] for i in target_words]
-    evaluatable.solve(target_words, data_name + '_1', None, data_name + '_2', None)
+    evaluatable.solve(target_words)
     df = evaluatable.subst1
-    return evaluate_wsi(df=df, stream=evaluatable.stream)
+    return evaluate_wsi(df=df)
 
 def create_app(evaluatable, data_name):
 
@@ -43,7 +39,7 @@ def create_app(evaluatable, data_name):
     app.jinja_env.globals.update(get_wsi_words_and_ari=get_wsi_words_and_ari)
 
     print("search created")
-    evaluatable._prepare(data_name + '_1', None, data_name + '_2', None)
+    evaluatable._prepare()
     ranking_golden, binary_golden = evaluatable.load_golden_data(data_name)
     mode = 'scd'
     if ranking_golden is None or binary_golden is None:
@@ -73,18 +69,16 @@ def create_app(evaluatable, data_name):
     @app.route('/analyze/<word>')
     def analyze(word):
         if mode == 'scd':
-            stream = io.StringIO()
-            binary, distance = evaluatable.solve_for_one_word(word, stream)
+            binary, distance = evaluatable.solve_for_one_word(word)
             label_pairs = {word:(binary, binary_golden[word])}
-            wp_path, dh_path, df = evaluatable.analyze_error(word, stream, label_pairs, pictures_dir)
+            wp_path, dh_path, df = evaluatable.analyze_error(word, label_pairs, pictures_dir)
             print(df.keys())
             print(df.iloc[0]['top_words2_pmi'])
-            return render_template('analysis.html', text=stream.getvalue(), wp_path=wp_path, dh_path=dh_path, word=word, df=df, mode=mode)
+            return render_template('analysis.html', wp_path=wp_path, dh_path=dh_path, word=word, df=df, mode=mode)
         elif mode == 'wsi':
-            stream = io.StringIO()
-            binary, distance = evaluatable.solve_for_one_word(word, stream)
-            wp_path, dh_path, df = evaluatable.analyze_error(word, stream, None, pictures_dir)
-            return render_template('analysis.html', text=stream.getvalue(), wp_path=wp_path, dh_path=dh_path, word=word, df=df, mode=mode)
+            _, _ = evaluatable.solve_for_one_word(word)
+            wp_path, dh_path, df = evaluatable.analyze_error(word, None, pictures_dir)
+            return render_template('analysis.html', wp_path=wp_path, dh_path=dh_path, word=word, df=df, mode=mode)
 
     return app
 

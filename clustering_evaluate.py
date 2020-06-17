@@ -1,38 +1,23 @@
-#from xlm.sgen_xlm import generate_substitutes
-from xlm.substs_loading import load_substs
-from collections import defaultdict, Counter
+from collections import defaultdict
 from evaluatable import Evaluatable, GridSearch
-from xlm.data_loading import load_data, load_target_words
-from xlm.wsi import clusterize_search, Substs_loader
-from pathlib import Path
+from xlm.wsi import clusterize_search, Substs_loader, load_target_words
 from joblib import Memory
-import sys
-import inspect
 from scipy.spatial.distance import cosine
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer, TfidfTransformer
-import os
-import io
-import matplotlib.pyplot as plt
-import seaborn as sns
-
 from pathlib import Path
-
 from itertools import product
 import fire
 import numpy as np
 import pandas as pd
-
+import os
+import matplotlib.pyplot as plt
+import seaborn as sns
+import inspect
 
 def get_word_plot(word, df, output_path, wsi_mode):
     print(word + ' clusters distribution')
     plt.figure(figsize=(10, 8))
     sns.set_context("paper", rc={"font.size": 15, "axes.titlesize": 15, "axes.labelsize": 15})
-
-    # width = 0.2
-    # ind = np.arange(len(dist1))
-    # plt.bar(ind, dist1, width, label='corp_1')
-    # plt.bar(ind + width, dist2, width, label='corp_2')
-    # plt.xticks(ind + width / 2, ind)
 
     if wsi_mode:
         df['gold_sense_id'] = df['gold_sense_id'].apply(int)
@@ -48,10 +33,6 @@ def get_word_plot(word, df, output_path, wsi_mode):
     img_path = output_path + '/' + word + '-cluster-dist.jpg'
     plt.savefig(img_path)
     return os.path.abspath(img_path).replace("/", "]")
-    # img = io.BytesIO()
-    # plt.savefig(img)
-    # img.seek(0)
-    # return img
 
 def get_distances_hist(word, output_path, dist_matrix, mask_scd, bool_mask_wsi, wsi_mode=False):
     plt.figure(figsize=(10, 8))
@@ -66,17 +47,8 @@ def get_distances_hist(word, output_path, dist_matrix, mask_scd, bool_mask_wsi, 
         ax = sns.distplot(dist_matrix[mask_scd == 2], label='new', norm_hist=True)
 
     ax.set_title(word + ' distance histograms')
-    # ax.set_xlabel('frequency', size=15)
-    # ax.set_ylabel('distance', size=15)
-
     ax.tick_params(axis='both', which='major', labelsize=12)
-    # ax.tick_params(axis='both', which='minor', labelsize=8)
-
     plt.legend(prop={"size":20})
-    # img = io.BytesIO()
-    # plt.savefig(img)
-    # img.seek(0)
-    # return img
 
     img_path = output_path + '/' + word + '-distance-histogram.jpg'
     plt.savefig(img_path)
@@ -89,7 +61,7 @@ class Clustering_Pipeline(Evaluatable):
                  use_silhouette = True, k = 2, n = 5, topk = None, lemmatizing_method = 'none', binary = False,
                  dump_errors = False, max_examples = None, delete_word_parts = False, drop_duplicates=True,
                  count_lemmas_weights = False,
-                 path_1 = None, path_2 = None, subst1 = None, subst2 = None, stream=None):
+                 path_1 = None, path_2 = None, subst1 = None, subst2 = None):
         """
         output_directory -- location where all the results are going to be written
 
@@ -122,7 +94,6 @@ class Clustering_Pipeline(Evaluatable):
         """
         super().__init__(dump_errors)
 
-        self.stream = stream if stream is not None else sys.stdout
         self.data_name = data_name
 
         self.mem = Memory('clustering_cache', verbose=0)
@@ -166,7 +137,7 @@ class Clustering_Pipeline(Evaluatable):
         self.substs_loader = Substs_loader(data_name, lemmatizing_method, max_examples, delete_word_parts,
                                            drop_duplicates, count_lemmas_weights)
 
-        self.log_df = pd.DataFrame(columns=['word', 'dist1', 'dist2'])
+        # self.log_df = pd.DataFrame(columns=['word', 'dist1', 'dist2'])
 
         if vectorizer_name == 'tfidf':
             self.vectorizer = TfidfVectorizer(token_pattern=r"(?u)\b\w+\b", min_df=self.min_df, max_df=max_df,
@@ -180,8 +151,6 @@ class Clustering_Pipeline(Evaluatable):
                 self.transformer2 = TfidfTransformer()
         else:
             assert False, "unknown vectorizer name %s" % vectorizer_name
-
-        print(self.get_params(), '<br>', file=self.stream)
 
     def get_params(self):
         """
@@ -201,14 +170,7 @@ class Clustering_Pipeline(Evaluatable):
         res['template'] = self.template
         return res
 
-    def get_substs_probs_str(self, substs, limit=50):
-        return "; ".join(['"%s" -- %.2f' % (s, p) for p, s in substs[:limit]])
-
-    def get_substs_clean_str(self, substs, limit=50):
-        return "; ".join(['"%s"' % s for s in substs[:limit]])
-
-
-    def explain_cluster(self, word, cluster, output, wsi_mode=False):
+    def explain_cluster(self, word, cluster, wsi_mode=False):
 
         result_tuple = dict()
         result_tuple['cluster'] = cluster
@@ -216,10 +178,10 @@ class Clustering_Pipeline(Evaluatable):
         clusters_sum1, clusters_sum2, all_sum1, all_sum2 = self.get_sums(*self.labels[word], *self.count_vectors[word])
         dist1, dist2 = self.distributions[word]
 
-        top_words1_pmi = self.get_top_in_clust(all_sum1, clusters_sum1, cluster,
-                                               dist1, k=-1) if cluster in clusters_sum1 else []
-        top_words2_pmi = self.get_top_in_clust(all_sum2, clusters_sum2, cluster,
-                                               dist2, k=-1) if cluster in clusters_sum2 else []
+        top_words1_pmi = self.get_top_pmi_in_clust(all_sum1, clusters_sum1, cluster,
+                                                   dist1, k=-1) if cluster in clusters_sum1 else []
+        top_words2_pmi = self.get_top_pmi_in_clust(all_sum2, clusters_sum2, cluster,
+                                                   dist2, k=-1) if cluster in clusters_sum2 else []
         top_words1_p = self.get_top_p_in_clust(all_sum1, clusters_sum1, cluster,
                                                dist1) if cluster in clusters_sum1 else []
         top_words2_p = self.get_top_p_in_clust(all_sum2, clusters_sum2, cluster,
@@ -290,7 +252,7 @@ class Clustering_Pipeline(Evaluatable):
 
         return result_tuple
 
-    def analyze_error(self, word, output, label_pairs = None, output_path = '.'):
+    def analyze_error(self, word, label_pairs = None, output_path = '.'):
 
         substs_df = pd.concat([self.subst1[self.subst1['word'] == word], self.subst2[self.subst2['word'] == word]], ignore_index=True)
         wp = get_word_plot(word, substs_df, output_path, label_pairs is None)
@@ -301,7 +263,7 @@ class Clustering_Pipeline(Evaluatable):
 
         cluster_descriptions = []
         for cluster in range(len(dist1)):
-            cluster_descriptions.append(self.explain_cluster(word, cluster, output, label_pairs == None))
+            cluster_descriptions.append(self.explain_cluster(word, cluster, label_pairs == None))
             # a little hack
             cluster_descriptions[-1]['distributions'] = self.distributions[word]
             if label_pairs is not None:
@@ -318,8 +280,6 @@ class Clustering_Pipeline(Evaluatable):
         return cosine(vec1, vec2)
 
     def _get_vectors(self,word, subs1, subs2):
-        #         TRY AND MAKE IT GLOBAL
-        #         print((subs1_str.shape, subs2_str.shape), file=self.stream)
         self.vectorizer = self.vectorizer.fit(np.concatenate((subs1, subs2)))
         vec1 = self.vectorizer.transform(subs1).todense()
         vec2 = self.vectorizer.transform(subs2).todense()
@@ -327,16 +287,9 @@ class Clustering_Pipeline(Evaluatable):
         vec1_count = vec1
         vec2_count = vec2
 
-        #         TRY AND MAKE IT GLOBAL
         if self.transformer1 is not None and self.transformer2 is not None:
             vec1 = self.transformer1.fit_transform(vec1).todense()
             vec2 = self.transformer2.fit_transform(vec2).todense()
-
-#         vec1_nonzero_mask = ~np.all(np.array(vec1) < 1e-6, axis=1)
-#         vec2_nonzero_mask = ~np.all(np.array(vec2) < 1e-6, axis=1)
-#         vec1 = vec1[vec1_nonzero_mask]
-#         vec2 = vec2[vec2_nonzero_mask]
-#         return vec1, vec2, vec1_count, vec2_count, vec1_nonzero_mask, vec2_nonzero_mask
 
         bool_array_1 = ~np.all(np.array(vec1) < 1e-6, axis=1)
         bool_array_2 = ~np.all(np.array(vec2) < 1e-6, axis=1)
@@ -347,21 +300,10 @@ class Clustering_Pipeline(Evaluatable):
 
         return vec1, vec2, vec1_count, vec2_count
 
-    def _prepare(self, data_name1, df1, data_name2, df2):
+    def _prepare(self):
         """
         generate or load substitutes if none provided
         """
-        if df1 is not None:
-            df1 = df1.dropna(axis=0)
-        if df2 is not None:
-            df2 = df2.dropna(axis=0)
-
-        if self.path1 is None and self.subst1 is None:
-            self.path1 = generate_substitutes(data_name=data_name1, dataframe=df1,
-                                                **self.substitutes_params)
-        if self.path2 is None and self.subst2 is None:
-            self.path2 = generate_substitutes(data_name=data_name2, dataframe=df2,
-                                                **self.substitutes_params)
 
         if self.subst1 is None or self.subst2 is None:
             self.subst1, self.subst2 = self.substs_loader.get_substs_pair(self.path1, self.path2, self.topk)
@@ -399,9 +341,6 @@ class Clustering_Pipeline(Evaluatable):
         gold_sence_ids1 =  defaultdict(list)
         gold_sence_ids2 =  defaultdict(list)
 
-        # cluster_most_common1 = defaultdict(str)
-        # cluster_most_common2 = defaultdict(str)
-
         feat_names = self.vectorizer.get_feature_names()
 
         dump_gold_sence_ids = False
@@ -414,7 +353,6 @@ class Clustering_Pipeline(Evaluatable):
             cluster_contexts1[l].append(subst1['context'][i])
             if dump_gold_sence_ids:
                 gold_sence_ids1[l].append(subst1['gold_sense_id'][i])
-            # cluster_most_common1[l] += subst1['substs'][i]
 
         for i, l in enumerate(labels2):
             cluster_examples2[l].append(subst2['substs_probs'][i])
@@ -423,20 +361,9 @@ class Clustering_Pipeline(Evaluatable):
             if dump_gold_sence_ids:
                 gold_sence_ids2[l].append(subst1['gold_sense_id'][i])
 
-            # cluster_most_common2[l] += subst2['substs'][i]
-
-        # for key in cluster_most_common1:
-        #     cluster_most_common1[key] = Counter(cluster_most_common1[key].split()).most_common()
-        #
-        # for key in cluster_most_common2:
-        #     cluster_most_common2[key] = Counter(cluster_most_common2[key].split()).most_common()
-
-        # self.cluster_most_common[word] = (cluster_most_common1, cluster_most_common2)
         self.examples[word] = ((cluster_examples1, cluster_examples_clean1), (cluster_examples2, cluster_examples_clean2))
         self.contexts[word] = (cluster_contexts1, cluster_contexts2)
         self.sense_ids[word] = (gold_sence_ids1, gold_sence_ids2)
-
-
 
     def get_sums(self, left, right, vec1_count, vec2_count):
         clusters_sum1 = {}
@@ -464,79 +391,6 @@ class Clustering_Pipeline(Evaluatable):
 
         return clusters_sum1, clusters_sum2, all_sum1, all_sum2
 
-
-    def gen_csv(self, word, left, right, vec1_count, vec2_count, dist1, dist2):
-
-        clusters_sum1, clusters_sum2, all_sum1, all_sum2 = self.get_sums(left, right, vec1_count, vec2_count)
-        cols = list()
-        vals = list()
-
-        cols.append('word')
-        cols.append('dist1')
-        cols.append('dist2')
-
-        vals.append(word)
-        vals.append(dist1)
-        vals.append(dist2)
-
-        labels_unique = list(set(left + right))
-
-        for i in sorted(labels_unique):
-            top_words1_pmi = self.get_top_in_clust(all_sum1, clusters_sum1, i,
-                                                   dist1) if i in clusters_sum1 else []
-            top_words2_pmi = self.get_top_in_clust(all_sum2, clusters_sum2, i,
-                                                   dist2) if i in clusters_sum2 else []
-            top_words1_p = self.get_top_p_in_clust(all_sum1, clusters_sum1, i,
-                                                   dist1) if i in clusters_sum1 else []
-            top_words2_p = self.get_top_p_in_clust(all_sum2, clusters_sum2, i,
-                                                   dist2) if i in clusters_sum2 else []
-            contexts1 = self.contexts[word][0][i]
-            contexts2 = self.contexts[word][1][i]
-
-            examples1 = self.examples[word][0][0][i][:10]
-            examples2 = self.examples[word][1][0][i][:10]
-
-            examples1_str = []
-            examples2_str = []
-
-            for ex in examples1:
-                ex_str = ['%.2f : %s' % i for i in ex[:10]]
-                examples1_str.append(ex_str)
-            for ex in examples2:
-                ex_str = ['%.2f : %s' % i for i in ex[:10]]
-                examples2_str.append(ex_str)
-
-            if "{}_dist1_top_words_pmi".format(i) not in self.log_df:
-                self.log_df["{}_dist1_top_words_pmi".format(i)] = ""
-                self.log_df["{}_dist2_top_words_pmi".format(i)] = ""
-                self.log_df["{}_dist1_top_words_p".format(i)] = ""
-                self.log_df["{}_dist2_top_words_p".format(i)] = ""
-                self.log_df["{}_dist1_contexts".format(i)] = ""
-                self.log_df["{}_dist2_contexts".format(i)] = ""
-                self.log_df["{}_dist1_substs".format(i)] = ""
-                self.log_df["{}_dist2_substs".format(i)] = ""
-
-            cols.append("{}_dist1_top_words_pmi".format(i))
-            cols.append("{}_dist2_top_words_pmi".format(i))
-            cols.append("{}_dist1_top_words_p".format(i))
-            cols.append("{}_dist2_top_words_p".format(i))
-            cols.append("{}_dist1_contexts".format(i))
-            cols.append("{}_dist2_contexts".format(i))
-            cols.append("{}_dist1_substs".format(i))
-            cols.append("{}_dist2_substs".format(i))
-
-            vals.append(top_words1_pmi)
-            vals.append(top_words2_pmi)
-            vals.append(top_words1_p)
-            vals.append(top_words2_p)
-            vals.append(contexts1)
-            vals.append(contexts2)
-            vals.append(examples1_str)
-            vals.append(examples2_str)
-
-        rows = pd.DataFrame([vals], columns=cols)
-        self.log_df = pd.concat([rows, self.log_df])
-
     def clusterize(self, word, subs1_df, subs2_df):
         """
         clustering.
@@ -546,16 +400,11 @@ class Clustering_Pipeline(Evaluatable):
         subs1 = subs1_df['substs']
         subs2 = subs2_df['substs']
 
-        print("started clustering %s - %d samples<br>" % (word, len(subs1) + len(subs2)))
+        print("started clustering %s - %d samples" % (word, len(subs1) + len(subs2)))
         print("subs lengths: %d, %d" % (len(subs1), len(subs2)))
 
         vec1, vec2, vec1_count, vec2_count = self._get_vectors(word, subs1, subs2)
-        print("vetors lengths: %d, %d" % (len(vec1), len(vec2)))
-
-        # vec1_count = vec1
-        # vec2_count = vec2
-        # vec1_count[vec1_count > 0] = 1save_examples(wo
-        # vec2_count[vec2_count > 0] = 1
+        print("vectors lengths: %d, %d" % (len(vec1), len(vec2)))
 
         print(len(subs1), len(subs2))
         print(len(vec1), len(vec2))
@@ -584,9 +433,6 @@ class Clustering_Pipeline(Evaluatable):
             dist1.append(left.count(i))
             dist2.append(right.count(i))
 
-        # print(dist1, '<br>', file=self.stream)
-        # print(dist2, '<br><br>', file=self.stream)
-
         distribution_one = np.array(dist1)
         distribution_two = np.array(dist2)
 
@@ -594,26 +440,19 @@ class Clustering_Pipeline(Evaluatable):
             labels_mask = np.zeros(distance_matrix.shape)
             labels_mask[:border, :border] = 1
             labels_mask[border:, border:] = 2
-
             labels_mask[border:, :border] = 3 #to even out counts
-
-            unique, counts = np.unique(labels_mask, return_counts=True)
-            # assert max(counts) == counts[0], "%s, shape = %s, border=%d" % (str(list(zip(unique, counts))), distance_matrix.shape, border)
-
             predicted_labels_mask = labels[:, None] == labels
-
             self.distances[word] = (distance_matrix, labels_mask, predicted_labels_mask)
 
         self.distributions[word] = (distribution_one, distribution_two)
 
         if self.dump_errors:
             self.save_examples(word, subs1_df, subs2_df, left, right, vec1_count, vec2_count)
-            # self.gen_csv(word, left, right, vec1_count, vec2_count, dist1, dist2)
 
         return distribution_one, distribution_two, left, right
 
-    def get_top_in_clust(self, all_sum, clusters_sum, num, clust_size, k=100):
-        pmi = []
+    def get_top_pmi_in_clust(self, all_sum, clusters_sum, num, clust_size, k=100):
+        PMIs = []
         c_clust = []
         c_all = []
         for n, score in enumerate(np.asarray(clusters_sum[num])[0]):
@@ -621,59 +460,53 @@ class Clustering_Pipeline(Evaluatable):
             dataset_size = np.sum(clust_size)
             all_sum = np.asarray(all_sum)
             if clust_size[num] != 0 and all_sum[0][n] != 0:
-                pmi.append((c_word / clust_size[num]) / (all_sum[0][n] / dataset_size))
+                PMIs.append((c_word / clust_size[num]) / (all_sum[0][n] / dataset_size))
             else:
-                pmi.append(0)
+                PMIs.append(0)
             c_clust.append(c_word)
             c_all.append(all_sum[0][n])
 
-        top_ind = np.flip(np.argsort(pmi))
+        top_ind = np.flip(np.argsort(PMIs))
         words = self.vectorizer.get_feature_names()
         top = []
         for i in top_ind:
-            top.append((np.log(pmi[i]), c_clust[i], c_all[i], words[i]))
+            top.append((np.log(PMIs[i]), c_clust[i], c_all[i], words[i]))
             k -= 1
             if k == 0:
                 break
         return top
 
     def get_top_p_in_clust(self, all_sum, clusters_sum, num, clust_size, k=100):
-        pmi = []
+        probs = []
         c_clust = []
         c_all = []
         for n, score in enumerate(np.asarray(clusters_sum[num])[0]):
             c_word = score
-            # if score == np.asarray(all_sum)[0][n] and score > clust_size[num]:
-            #     print(score, file=self.stream)
-            #     print(clusters_sum[num], clust_size[num], file=self.stream)
-            dataset_size = np.sum(clust_size)
             all_sum = np.asarray(all_sum)
             if clust_size[num] != 0:
-                pmi.append(c_word / clust_size[num])
+                probs.append(c_word / clust_size[num])
             else:
-                pmi.append(0)
+                probs.append(0)
             c_clust.append(c_word)
             c_all.append(all_sum[0][n])
 
-        top_ind = np.flip(np.argsort(pmi))
+        top_ind = np.flip(np.argsort(probs))
         words = self.vectorizer.get_feature_names()
         top = []
         for i in top_ind:
-            top.append((pmi[i], c_clust[i], c_all[i], words[i]))
+            top.append((probs[i], c_clust[i], c_all[i], words[i]))
             k -= 1
             if k == 0:
                 break
         return top
 
-    def solve_for_one_word(self, word, stream = None):
-        if stream is not None:
-            self.stream = stream
+    def solve_for_one_word(self, word):
         subs1_w = self.subst1[self.subst1['word'] == word]
         subs2_w = self.subst2[self.subst2['word'] == word]
         if len(subs1_w) == 0 or len(subs2_w) == 0:
-            print("%s - no samples<br>" % word, file=self.stream)
+            print("%s - no samples" % word)
             return
-        # targets.append(word)
+
         distribution1, distribution2, labels1, labels2 = self.clusterize(word, subs1_w, subs2_w)
 
         index1 = subs1_w.index[self.nonzero_indexes[word][0]]
@@ -683,26 +516,21 @@ class Clustering_Pipeline(Evaluatable):
         self.subst2.loc[index2, 'labels'] = labels2
 
         if distribution1.size == 0 or distribution2.size == 0:
-            print("for word %s zero examples in corporas - %d, %d", file=self.stream %
-                                                                         (word, len(distribution1), len(distribution2)))
+            print("for word %s zero examples in corporas - %d, %d" % (word, len(distribution1), len(distribution2)))
             return
 
         distance = self._get_score(distribution1, distribution2)
         binary = self.solve_binary(word, distribution1, distribution2)
 
-        # print(word, ' -- ', distance, ' ', binary, '<br>',  file=self.stream)
         return binary, distance
 
-    def solve(self, target_words, data_name1, df1, data_name2, df2):
+    def solve(self, target_words):
         """
         main method
         target words - list of target words
-        data_name1, data_name2 - names of the data, such as 'rumacro_1', 'rumacro_2'
-        df1, df2 - dataframes with data. Can be None, that data will be loaded using given names
-        (or will not be loaded at all if there's no need in generating substitutes)
         """
 
-        self._prepare(data_name1, df1, data_name2, df2)
+        self._prepare()
         distances = []
         binaries = []
         targets = []
@@ -710,7 +538,7 @@ class Clustering_Pipeline(Evaluatable):
             subs1_w = self.subst1[self.subst1['word'] == word]
             subs2_w = self.subst2[self.subst2['word'] == word]
             if len(subs1_w) == 0 or len(subs2_w) == 0:
-                print("%s - no samples<br>" % word, file=self.stream)
+                print("%s - no samples" % word)
                 continue
             targets.append(word)
             distribution1, distribution2, labels1, labels2 = self.clusterize(word, subs1_w, subs2_w)
@@ -722,8 +550,7 @@ class Clustering_Pipeline(Evaluatable):
             self.subst2.loc[index2, 'predict_sense_id'] = labels2
 
             if distribution1.size == 0 or distribution2.size == 0:
-                print("for word %s zero examples in corporas - %d, %d" , file=self.stream%
-                      (word, len(distribution1), len(distribution2)))
+                print("for word %s zero examples in corporas - %d, %d" % (word, len(distribution1), len(distribution2)))
                 distance = sum(distances) / len(distances)
                 binary = 1
                 distances.append(distance)
@@ -739,10 +566,10 @@ class Clustering_Pipeline(Evaluatable):
             distances.append(distance)
             binaries.append(binary)
 
-            print(word, ' -- ', distance, ' ', binary, '<br>')
+            print(word, ' -- ', distance, ' ', binary)
 
-        print(len(targets), "words processed<br>", file=self.stream)
-        self.log_df.to_csv(r'words_clusters.csv', index=False)
+        print(len(targets), "words processed")
+        # self.log_df.to_csv(r'words_clusters.csv', index=False)
 
         return list(zip(targets, distances, binaries))
 
@@ -815,7 +642,6 @@ class Clustering_Search(GridSearch):
         """
         super().__init__()
         self.evaluatables = None
-        self.stream = io.StringIO()
         self.vectorizer_name = vectorizer_name
         self.number_of_clusters = number_of_clusters
         self.use_silhouette = use_silhouette
@@ -889,7 +715,7 @@ class Clustering_Search(GridSearch):
                                   dump_errors = self.dump_errors, max_examples = self.max_examples,
                                   delete_word_parts=self.delete_word_parts, drop_duplicates=self.drop_duplicates,
                                   count_lemmas_weights=self.count_lemmas_weights,
-                                  subst1=substs1, subst2=substs2, stream=self.stream)
+                                  subst1=substs1, subst2=substs2)
         return res
 
     def _create_params_list(self, lists):
@@ -944,7 +770,6 @@ class Clustering_Search(GridSearch):
         print("evaluatable created")
 
         evaluatable.evaluate()
-        return self.stream
 
     def solve(self, data_name, output_file_name = None):
         """
@@ -959,7 +784,7 @@ class Clustering_Search(GridSearch):
                 item = getattr(self, param, None)
                 if item is None:
                     nones.append(param)
-            print("not all parameters are set: %s<br>" % str(nones), file=self.stream)
+            print("not all parameters are set: %s" % str(nones))
             return 1
         params = list[0]
 
@@ -970,7 +795,7 @@ class Clustering_Search(GridSearch):
             target_words = evaluatable.subst1['word'].unique()
         else:
             target_words = [i.split('_')[0] for i in target_words]
-        evaluatable.solve(target_words,  data_name + '_1', None,  data_name + '_2', None)
+        evaluatable.solve(target_words)
 
         if output_file_name is not None:
             dd = Path(self.output_directory)
@@ -978,11 +803,5 @@ class Clustering_Search(GridSearch):
                 df.loc[df.predict_sense_id.isnull(), 'predict_sense_id'] = -1
                 df.to_csv(dd / (output_file_name + f'_{n+1}.csv'), sep='\t', index=False)
 
-        # print("over")
-        return self.stream
-
 if __name__ == '__main__':
     fire.Fire(Clustering_Search)
-
-#TODO: clean-up
-#TODO: add targets!
