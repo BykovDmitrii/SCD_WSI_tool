@@ -16,7 +16,6 @@ data/russe/
 data/surel_target_words.txt
 data/swedish/
 run_web_bts_rnc.sh
-run_web_rumacro.sh
 web/.idea/
 web/maxari_cache/
 web/pictures/
