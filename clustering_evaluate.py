@@ -92,9 +92,7 @@ class Clustering_Pipeline(Evaluatable):
         subst1, subst2 - you can also pass the pre-loaded substitutes as dataframes
 
         """
-        self.output_dir = output_directory
-        super().__init__(dump_errors)
-
+        super().__init__(dump_errors, output_directory)
         self.data_name = data_name
 
         self.mem = Memory('clustering_cache', verbose=0)
@@ -129,7 +127,6 @@ class Clustering_Pipeline(Evaluatable):
         self.distances = dict()
         self.sense_ids = dict()
         self.template = self.path1.split('/')[-1].split('_')[0]
-
         self.lemmatizing_method = lemmatizing_method
         self.binary = binary
         self.dump_errors = dump_errors
@@ -169,6 +166,7 @@ class Clustering_Pipeline(Evaluatable):
         values = [getattr(self, key, None) for key in parameters]
         res = dict(zip(parameters, values))
         res['template'] = self.template
+
         return res
 
     def explain_cluster(self, word, cluster, wsi_mode=False):
@@ -416,9 +414,6 @@ class Clustering_Pipeline(Evaluatable):
         vec1, vec2, vec1_count, vec2_count = self._get_vectors(word, subs1, subs2)
         print("vectors lengths: %d, %d" % (len(vec1), len(vec2)))
 
-        print(len(subs1), len(subs2))
-        print(len(vec1), len(vec2))
-
         border = len(self.nonzero_indexes[word][0])
         transformed = np.asarray(np.concatenate((vec1, vec2), axis=0))
 
@@ -569,7 +564,7 @@ class Clustering_Pipeline(Evaluatable):
 
             print(word)
             print(distribution1)
-            print(distribution2)
+            print(distribution2, '\n')
 
             distance = self._get_score(distribution1, distribution2)
             binary = self.solve_binary(word, distribution1, distribution2)
@@ -608,7 +603,7 @@ search_ranges = {
     #'n' : [5, 7, 10],
     'k':list(range(2,6)) + list(range(6,22,3)), #[2,3,4,5,7,10],
     'n':list(range(3,7)) + list(range(7,30,3)),  #[5,7,10,12,15, 20],
-    'max_number_clusters': [3, 4, 5, 7, 8, 10, 12, 15],
+    'number_of_clusters': [3, 4, 5, 7, 8, 10, 12, 15],
     'topk' : [15, 30, 50, 100, 150],
     'lemmatizing_method' : ['none', 'single', 'all']
 }
@@ -617,7 +612,7 @@ class Clustering_Search(GridSearch):
     def __init__(self, output_directory, subst1_path, subst2_path, subdir = None, vectorizer_name = None, min_df = None,
                  max_df = None, number_of_clusters = None, use_silhouette = None, k = None, n = None,
                  topk = None, lemmatizing_method=None, binary = False, dump_errors = False, max_examples = None,
-                 delete_word_parts = True, drop_duplicates=True, count_lemmas_weights=False):
+                 delete_word_parts = False, drop_duplicates=True, count_lemmas_weights=False, should_dump_results=True):
         """
         subst1_path, subst2_path - paths to the substitutes. Two cases:
         1) subst1_path and subst2_path are directories containing substitutes dumps (in that case the search will be
@@ -674,6 +669,7 @@ class Clustering_Search(GridSearch):
         self.delete_word_parts = delete_word_parts
         self.drop_duplicates = drop_duplicates
         self.count_lemmas_weights = count_lemmas_weights
+        self.should_dump_results = should_dump_results
 
     def get_substs(self, data_name, subst1_path, subst2_path, topk, lemmatizing_method):
         """
@@ -775,11 +771,12 @@ class Clustering_Search(GridSearch):
             print("not all parameters are set: %s" % str(nones))
             return 1
 
-        print("params generated")
+        print("parameters:")
+        print(list[0], '\n')
         evaluatable = self.create_evaluatable(data_name, list[0])
         print("evaluatable created")
 
-        evaluatable.evaluate()
+        evaluatable.evaluate(self.should_dump_results)
 
     def solve(self, data_name, output_file_name = None):
         """

@@ -9,7 +9,6 @@ import sklearn.cluster.hierarchical
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import cdist
-import seaborn as sns
 from sklearn.metrics import silhouette_score
 from pymorphy2 import MorphAnalyzer
 import spacy
@@ -17,6 +16,7 @@ import string
 from collections import Counter
 import fire
 from xlm.substs_loading import load_substs
+from pathlib import Path
 
 ################################################################
 
@@ -26,7 +26,7 @@ rnc_target_old_positive_words_path = '../data/targets/rumacro_positive.txt'
 rnc_target_old_negative_words_path = '../data/targets/rumacro_negative.txt'
 
 def _load_target_words(file):
-    with open(str(pathlib.Path(__file__).parent.absolute()) + '/' + file) as wf:
+    with open(str(Path(__file__).parent.absolute()) + '/' + file) as wf:
         target_words = wf.readlines()
     return list(map(lambda x: x.strip(), target_words))
 

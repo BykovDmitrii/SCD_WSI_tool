@@ -27,8 +27,8 @@ def get_golden_data_paths(data_name):
     return paths1[0], paths2[0]
 
 class Evaluatable(ABC):
-    def __init__(self, should_dump = False):
-        self.output_dir = './'
+    def __init__(self, should_dump = False,  output_dir='./'):
+        self.output_dir = output_dir
         self.should_dump = should_dump
 
     @abstractmethod
@@ -104,7 +104,7 @@ class Evaluatable(ABC):
         df_dict['ranking_score'] = ranking_metric
         df_dict['binary_accuracy_score'] = binary_accuracy_metric
         df_dict['binary_f1_score'] = binary_f1_metric
-        df = pd.DataFrame.from_dict(df_dict)
+        df = pd.DataFrame(df_dict, index=[0])
         return df
 
     def evaluate(self, should_dump_results=True):
@@ -140,6 +140,7 @@ class Evaluatable(ABC):
         dataframe = self.get_dataframe(ranking_metric, binary_accuracy_metric, binary_f1_metric)
 
         if should_dump_results:
+            print("Dumping results!")
             self.dump_results(results, dataframe)
 
         return dataframe, labels_pairs
@@ -154,6 +155,7 @@ class Evaluatable(ABC):
         params = self.get_params()
         params['timestamp'] = round(time.time() * 1000)
 
+        print(self.output_dir, '/', params['template'])
         output_dir = self.output_dir + '/' + params['template']
         os.makedirs(output_dir, exist_ok=True)
 
@@ -164,6 +166,8 @@ class Evaluatable(ABC):
         full_path_rank = output_dir + '/' + filename_rank
         full_path_binary = output_dir + '/' + filename_binary
         full_path_df = output_dir + '/' + filename_df
+
+        print("full_path_rank - %s" % full_path_rank)
 
         if results is not None:
             with open(full_path_rank, 'w+') as output_rank:
@@ -179,7 +183,7 @@ class Evaluatable(ABC):
 
     def run(self, target_words, df1, df2):
         """
-        runs solver and dumps the results without calculatin metrics
+        runs solver and dumps the results without calculating metrics
         """
         results = self.solve(target_words, df1, df2)
         self.dump_results(results)
