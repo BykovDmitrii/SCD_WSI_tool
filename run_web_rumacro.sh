@@ -1,9 +1,9 @@
 #!/bin/bash
 (export PYTHONPATH=$PYTHONPATH:./; 
 	python ./web/app.py \
-		--data_name=english \
-		--subst1_path=$1/\<mask\>\<mask\>-or-T-2ltr2f_topk200_fixspacesTrue.npz+0.0+ \
-		--subst2_path=$2/\<mask\>\<mask\>-or-T-2ltr2f_topk200_fixspacesTrue.npz+0.0+ \
+		--data_name=rumacro \
+		--subst1_path=$1/\<mask\>\<mask\>-или-T-2ltr2f_topk200_fixspacesTrue.npz+0.0+ \
+		--subst2_path=$2/\<mask\>\<mask\>-или-T-2ltr2f_topk200_fixspacesTrue.npz+0.0+ \
 		--lemmatizing_method=none \
 		--topk=150 \
 		--k=10 \
