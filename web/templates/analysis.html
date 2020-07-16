@@ -7,12 +7,12 @@
 <title>Word analysis</title>
 </head>
 <body>
-    <slant style="font-size:250%"><b>Target word - {{word}}</b></slant>
+    <slant style="font-size:250%"><b>Target word - {{word}}</b></slant> <br>
     {% if mode != 'wsi' %}
-        <slant style="font-size:150%"><b>Predicted - {{df.iloc[0]['labels'][0]}}, golden label
-             - {{df.iloc[0]['labels'][1]}}</b></slant>
+        <slant style="font-size:150%"><b>Predicted - {{df.iloc[0]['labels'][0]}} <br> Golden label
+             - {{df.iloc[0]['labels'][1]}}</b></slant> <br>
         {% if df.iloc[0]['decision_cluster'] != -1 %}
-            <slant style="font-size:150%"><b>Decision made on cluster - {{df.iloc[0]['decision_cluster']}}</b></slant>
+            <slant style="font-size:150%"><b>Decision made on cluster - {{df.iloc[0]['decision_cluster']}}</b></slant> <br>
         {% endif %}
     {% endif %}
 
@@ -35,133 +35,161 @@
         <slant style="font-size:180%"><b>Cluster {{ label }}</b></slant>
         <table style="width:100%">
         <tr>
-            <th><b><span style="color:#190D6A; font-size:110%;">Top P subst (sorted by P)</span></b></th>
+            <th colspan="2"><b><span style="color:#190D6A; font-size:120%;">Top P subst (sorted by P)</span></b></th>
         </tr>
 
         <tr>
-            <th>Subcorpus 1:<br></th>
+            <th><b><span style="font-size:110%">Subcorpus 1:</span></b></th>
             {% if mode != "wsi" %}
-                <th><b>Subcorpus 2:</b></th>
+                <th><b><span style="font-size:110%">Subcorpus 2:</span></b></th>
             {% endif %}
         </tr>
 
         <tr>
-            <th>
+            <td>
                 {% for p, c1, c2, w in row['top_words1_p'] %}
                     {% set pf = '%.4f' % p %}
                     {{pf}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
                 {% endfor %}
-            </th>
-        </tr>
+            </td>
         {% if mode != "wsi" %}
-            <tr>
-                <th>
+                <td>
                     {% for p, c1, c2, w in row['top_words2_p'] %}
                         {% set pf = '%.4f' % p %}
                         {{pf}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
                     {% endfor %}
-                </th>
-            </tr>
+                </td>
         {% endif %}
+        </tr>
         </table>
 
         <br>
 
         <table style="width:100%">
         <tr>
-            <th><b><span style="color:#190D6A; font-size:110%;">Top PMI subst (sorted by PMI)</span></b></th>
+            <th colspan="2"><b><span style="color:#190D6A; font-size:110%;">Top PMI subst (sorted by PMI)</span></b></th>
         </tr>
 
         <tr>
-            <th>Subcorpus 1:<br></th>
+            <th><b><span style="font-size:110%">Subcorpus 1:</span></b></th>
             {% if mode != "wsi" %}
-                <th><b>Subcorpus 2:</b></th>
+                <th><b><span style="font-size:110%">Subcorpus 2:</span></b></th>
             {% endif %}
         </tr>
 
         <tr>
-            <th>
+            <td>
                 {% for p, c1, c2, w in row['top_words1_pmi'] %}
                     {% set pf = '%.4f' % p %}
                     {{pf}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
                 {% endfor %}
-            </th>
-        </tr>
+            </td>
         {% if mode != "wsi" %}
-            <tr>
-                <th>
-                    {% for p, c1, c2, w in row['top_words1_pmi'] %}
+                <td>
+                    {% for p, c1, c2, w in row['top_words2_pmi'] %}
                         {% set pf = '%.4f' % p %}
                         {{pf}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
                     {% endfor %}
-                </th>
-            </tr>
+                </td>
         {% endif %}
+        </tr>
         </table>
 
         <br>
 
         <table style="width:100%">
         <tr>
-            <th><b><span style="color:#190D6A; font-size:110%;">Top-PMI subst first (sorted by P)</span></b></th>
+            <th colspan="2"><b><span style="color:#190D6A; font-size:110%;">Top-PMI subst first (sorted by P)</span></b></th>
         </tr>
 
         <tr>
-            <th>Subcorpus 1:<br></th>
+            <th><b><span style="font-size:110%">Subcorpus 1:</span></b></th>
             {% if mode != "wsi" %}
-                <th><b>Subcorpus 2:</b></th>
+                <th><b><span style="font-size:110%">Subcorpus 2:</span></b></th>
             {% endif %}
         </tr>
 
         <tr>
-            <th>
+            <td>
                 {% for p, pmi, c1, c2, w in row['top_words1_p_pmi'] %}
                     {% set pf = '%.4f' % p %}
                     {% set pmif = '%.4f' % pmi %}
                     p={{pf}}; pmi={{pmif}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
                 {% endfor %}
-            </th>
-        </tr>
+            </td>
         {% if mode != "wsi" %}
-            <tr>
-                <th>
-                    {% for p, pmi, c1, c2, w in row['top_words1_p_pmi'] %}
+                <td>
+                    {% for p, pmi, c1, c2, w in row['top_words2_p_pmi'] %}
                         {% set pf = '%.4f' % p %}
                         {% set pmif = '%.4f' % pmi %}
 
                         p={{pf}}; pmi={{pmif}} {{c1|int}}/{{c2|int}} - <b><span style="color:#190D6A">{{w}}</span></b>
                     {% endfor %}
-                </th>
-            </tr>
+                </td>
         {% endif %}
+        </tr>
         </table>
 
 
         <br><br><br>
-        <th><b><span style="color:#190D6A; font-size:120%;">Examples</span></b></th>
+        <th colspan="2"><b><span style="color:#190D6A; font-size:150%;">Examples</span></b></th><br>
 {#        EXAMPLES #}
-
+	
+        <th colspan="2"><b><span style="font-size:120%"> Corpus 1</span></b></th><br>
         {% for ex in row['examples_1'] %}
             <table style="width:100%">
                 <tr>
-                    <th> Context: </th> <th>{{ ex['cont']  }}</th>
+                    {% set left = ex['cont'][:ex['positions'][0]] %}
+                    {% set right = ex['cont'][ex['positions'][1]:] %}
+                    {% set target = ex['cont'][ex['positions'][0]:ex['positions'][1]] %}
+                    <td> Context: </td> <td>{{ left  }} <b>{{ target }}</b> {{ right }}</td>
                 </tr>
                 <tr>
-                    <th> substs with probs </th>
-                    <th>
+                    <td> substs with probs </td>
+                    <td>
                         {% for p, sub in ex['substs'][:50] %}
                             {{ '%.4f' % p|float }}:<b><span style="color:#190D6A">{{sub}}</span></b>;
                         {% endfor %}
-                    </th>
+                    </td>
                 </tr>
 
                 <tr>
-                    <th> used substs </th>
-                    <th>
+                    <td> used substs </td>
+                    <td>
                         {% for sub in ex['clean_substs'][:50] %}
                             <b><span style="color:#190D6A">{{sub}}</span></b>;
                         {% endfor %}
-                    </th>
+                    </td>
+                </tr>
+            </table>
+            <br>
+        {% endfor %}
+
+        {% if row['examples_2']|length %}
+            <th colspan="2"><b><span style="font-size:120%"> Corpus 2</span></b></th><br>
+        {% endif %}
+
+        {% for ex in row['examples_2'] %}
+            <table style="width:100%">
+                <tr>
+                    <td> Context: </td> <td>{{ ex['cont']  }}</td>
+                </tr>
+                <tr>
+                    <td> substs with probs </td>
+                    <td>
+                        {% for p, sub in ex['substs'][:50] %}
+                            {{ '%.4f' % p|float }}:<b><span style="color:#190D6A">{{sub}}</span></b>;
+                        {% endfor %}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td> used substs </td>
+                    <td>
+                        {% for sub in ex['clean_substs'][:50] %}
+                            <b><span style="color:#190D6A">{{sub}}</span></b>;
+                        {% endfor %}
+                    </td>
                 </tr>
             </table>
             <br>
@@ -171,9 +199,5 @@
         </section>
 
     {% endfor %}
-
-    <div id="element3">
-        {{ text|safe }}
-    </div>
 </body>
 </html>

@@ -8,25 +8,18 @@ import csv
 from openpyxl import load_workbook
 from collections import defaultdict
 
-german_corporas_path = '../data/corporas/'
+german_corporas_path = 'data/corporas/'
 durel_corpora_names = ['dta18', 'dta19']
 surel_corpora_names = ['cook',  'sdewac_1',  'sdewac_2',  'sdewac_3']
 durel_target_words_path = 'data/durel_target_words.txt'
 surel_target_words_path = 'data/surel_target_words.txt'
 
-durel_dataset_path = '../data/DURel/testset/testset.csv'
+durel_dataset_path = 'data/DURel/testset/testset.csv'
 
 target_languages = ['english', 'german', 'swedish', 'latin']
-
 corpora_extension = '.txt'
-
-rnc_dir = '../data/rnc/'
-rnc_old_dir = '../data/rnc_old/'
-rnc_target_positive_words_path = rnc_dir + 'positive_targets.txt'
-rnc_target_negative_words_path = rnc_dir + 'negative_targets.txt'
-
-rnc_target_old_positive_words_path = rnc_old_dir + 'positive_targets.txt'
-rnc_target_old_negative_words_path = rnc_old_dir + 'negative_targets.txt'
+rnc_target_old_positive_words_path = '../data/targets/rumacro_positive.txt'
+rnc_target_old_negative_words_path = '../data/targets/rumacro_negative.txt'
 
 
 rnc_parts = {1:'old-1917/', 2:'new1991-/'}
@@ -35,7 +28,7 @@ rnc_subdirs = ['positive', 'negative']
 ################################################################
 
 def _load_target_words(file):
-    with open(str(pathlib.Path(__file__).parent.absolute()) + '/' + file) as wf:
+    with open(str(Path(__file__).parent.absolute()) + '/' + file) as wf:
         target_words = wf.readlines()
     return list(map(lambda x: x.strip(), target_words))
 
@@ -46,25 +39,40 @@ def _get_rumacro_target_words_pair(name):
     if name == 'rumacro':
         return _load_target_words(rnc_target_positive_words_path),  _load_target_words(rnc_target_negative_words_path)
 
+# def load_target_words(name):
+#     name = name.split('_')[0]
+#     if name == 'rumacroold':
+#         return _load_target_words(rnc_target_old_positive_words_path) + _load_target_words(rnc_target_old_negative_words_path)
+#     if name == 'rumacro':
+#         return _load_target_words(rnc_target_positive_words_path) + _load_target_words(rnc_target_negative_words_path)
+#     elif name == 'dta':
+#         return _load_target_words(durel_target_words_path)
+#     elif name in target_languages:
+#         return _load_target_words('data/' + name + '/targets.txt')
+#     elif name in [i + 'unlem' for i in target_languages]:
+#         name = name.replace('unlem', '')
+#         return _load_target_words('data/' + name + '/targets.txt')
+#     elif name in surel_corpora_names:
+#         return _load_target_words(surel_target_words_path)
+#     elif 'russe' in name:
+#         return None
+#     else:
+#         assert False, "could not find target words for %s" % name
+
 def load_target_words(name):
     name = name.split('_')[0]
-    if name == 'rumacroold':
+    if name == 'rumacroold' or name == 'rumacro':
         return _load_target_words(rnc_target_old_positive_words_path) + _load_target_words(rnc_target_old_negative_words_path)
-    if name == 'rumacro':
-        return _load_target_words(rnc_target_positive_words_path) + _load_target_words(rnc_target_negative_words_path)
-    elif name == 'dta':
-        return _load_target_words(durel_target_words_path)
     elif name in target_languages:
-        return _load_target_words('data/' + name + '/targets.txt')
+        return _load_target_words('../data/targets/' + name + '.txt')
     elif name in [i + 'unlem' for i in target_languages]:
         name = name.replace('unlem', '')
         return _load_target_words('data/' + name + '/targets.txt')
-    elif name in surel_corpora_names:
-        return _load_target_words(surel_target_words_path)
     elif 'russe' in name:
         return None
     else:
         assert False, "could not find target words for %s" % name
+
 
 ################################################################
 # RNC
