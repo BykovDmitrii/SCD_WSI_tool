@@ -45,6 +45,8 @@ def load_target_words(name):
     elif name in [i + 'unlem' for i in target_languages]:
         name = name.replace('unlem', '')
         return _load_target_words('data/' + name + '/targets.txt')
+    elif name == "rushifteval":
+        return _load_target_words('../data/targets/rushifteval.txt')
     elif 'russe' in name:
         return None
     else:

@@ -58,7 +58,7 @@ np.seterr(divide='ignore', invalid='ignore')
 
 class Clustering_Pipeline(Evaluatable):
     def __init__(self, data_name, vectorizer_name = 'count_tfidf', min_df = 10, max_df = 0.6, number_of_clusters = 12,
-                 use_silhouette = True, k = 2, n = 5, topk = None, lemmatizing_method = 'none', binary = False,
+                 use_silhouette = True, k = 2, linkage='average', n = 5, topk = None, lemmatizing_method = 'none', binary = False,
                  dump_errors = False, max_examples = None, delete_word_parts = False, drop_duplicates=True,
                  count_lemmas_weights = False, output_directory = './',
                  path_1 = None, path_2 = None, subst1 = None, subst2 = None):
@@ -106,6 +106,7 @@ class Clustering_Pipeline(Evaluatable):
         self.min_df = int(min_df) if min_df >= 1 else float(min_df)
         self.max_df = int(max_df) if max_df >= 1 else float(max_df)
         self.topk = topk
+        self.linkage = linkage
 
         self.vectorizer_name = vectorizer_name
         self.substitutes_params = dict()
@@ -425,11 +426,13 @@ class Clustering_Pipeline(Evaluatable):
         corpora_ids = np.zeros(len(transformed))
         corpora_ids[border:] = 1
 
+        linkages = tuple([self.linkage]) if self.linkage else None
+
         if self.use_silhouette:
-            labels, _, _, w_distances = clusterize_search(word, transformed, ncs=list(range(2, 5)) + list(range(7, 15, 2)),
+            labels, _, _, w_distances = clusterize_search(word, transformed, ncs=list(range(2, 5)) + list(range(7, 15, 2)), linkages=linkages,
                                              corpora_ids = corpora_ids )
         else:
-            labels, _, _, w_distances = clusterize_search(word, transformed, ncs=(self.number_of_clusters,),
+            labels, _, _, w_distances = clusterize_search(word, transformed, ncs=(self.number_of_clusters,), linkages=linkages,
                                                           corpora_ids = corpora_ids)
 
         distance_matrix = w_distances[0]
